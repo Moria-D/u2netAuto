@@ -1,0 +1,13 @@
+# 忽略所有视频文件
+*.mp4
+
+# 常见缓存与系统文件
+*.log
+__pycache__/
+*.py[cod]
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+
