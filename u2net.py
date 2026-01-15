@@ -29,7 +29,7 @@ def draw_dashed_rect(img, x1, y1, x2, y2, color, thickness=1):
 def draw_vector_arrow(img, p1, p2, color=(0, 255, 255), size=2):
     p1 = (int(p1[0]), int(p1[1])); p2 = (int(p2[0]), int(p2[1]))
     dist = np.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
-    if dist > 2:
+    if dist > 1.0: 
         cv2.arrowedLine(img, p1, p2, color, size, tipLength=0.3)
 
 def draw_bracket(img, x1, y1, x2, y2, color, thickness=2, length=20):
@@ -84,12 +84,12 @@ class U2NetSaliency:
         return mask
 
 # ==========================================
-# 核心算法引擎 V33.2 (Bugfix)
+# 核心算法引擎 V36.0 (Slow-Pan Cinema)
 # ==========================================
 
 class DirectorEngine:
     def __init__(self, target_res=(1920, 1080)):
-        print(f"[System] 初始化导演引擎 V33.2 (Bugfix)...")
+        print(f"[System] 初始化导演引擎 V36.0 (Slow-Pan Cinema)...")
         self.target_w, self.target_h = target_res
         try:
             self.saliency_detector = U2NetSaliency('u2netp.onnx')
@@ -108,16 +108,13 @@ class DirectorEngine:
         return savgol_filter(data, window_size, polyorder)
 
     def get_saliency_roi(self, img):
-        # 1. U2Net
         saliency_map_small = self.saliency_detector.detect(img)
         saliency_map = cv2.resize(saliency_map_small, (img.shape[1], img.shape[0]))
         
-        # 2. Mask
         _, thresh = cv2.threshold(saliency_map, 100, 255, cv2.THRESH_BINARY)
         white_pixels = cv2.countNonZero(thresh)
         saliency_ratio = white_pixels / (img.shape[0] * img.shape[1])
         
-        # 3. Contour & Rect
         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
         final_cx, final_cy = img.shape[1]/2, img.shape[0]/2
@@ -131,7 +128,6 @@ class DirectorEngine:
             sal_top = ry
             sal_bottom = ry + rh
             
-            # Smart Anchor
             M = cv2.moments(main_contour)
             if M["m00"] != 0:
                 phys_cx = int(M["m10"] / M["m00"])
@@ -141,7 +137,6 @@ class DirectorEngine:
                 
             aspect_ratio = rh / rw if rw > 0 else 0
             if aspect_ratio > 1.2: 
-                # Humanoid
                 visual_cy = ry + (rh * 0.35) 
                 visual_cx = phys_cx 
                 final_cx, final_cy = visual_cx, visual_cy
@@ -150,21 +145,26 @@ class DirectorEngine:
                 
         return (final_cx, final_cy), saliency_ratio, saliency_map, rect, sal_top, sal_bottom
 
-    def calculate_natural_scale(self, ratio, duration):
-        """ V32 自然缩放逻辑 """
-        target_scale = 0.5 / (ratio + 0.25)
-        duration_limit = 1.0 + (duration * 0.08) 
-        hard_limit = 1.6
+    def calculate_cinema_scale(self, ratio, duration):
+        """ V35 逻辑：强制微小推进，但保持克制 """
+        target_scale = 0.55 / (ratio + 0.25)
+        duration_limit = 1.0 + (duration * 0.06) 
+        hard_limit = 1.7
         final_limit = min(duration_limit, hard_limit)
-        target_scale = max(1.1, min(target_scale, final_limit))
+        target_scale = max(1.15, min(target_scale, final_limit))
         return target_scale
 
     def ease_quintic_in_out(self, t):
+        """ 激进曲线 (用于 Zoom) """
         if t < 0.5: return 16 * t * t * t * t * t
         else: return 1 - pow(-2 * t + 2, 5) / 2
 
+    def ease_sine_in_out(self, t):
+        """ 柔和曲线 (用于 Pan) """
+        return -(np.cos(np.pi * t) - 1) / 2
+
     def analyze_content(self, clip):
-        print(f"   [Phase 1] 扫描全片 (V33 Pipeline)...")
+        print(f"   [Phase 1] 扫描全片 (V36 Slow-Pan)...")
         src_w, src_h = clip.w, clip.h
         
         raw_cx, raw_cy, raw_ratios, raw_rects = [], [], [], []
@@ -205,14 +205,16 @@ class DirectorEngine:
         need_slowmo = motion_score > 8.0 and clip.duration > 4
 
         # Stage 1: Input Smoothing
-        win_pos = int(clip.fps * 3.0)
+        # [V36] X轴使用超大窗口 (8.0s) 进行源头稳像，Y轴保持灵敏
+        win_cx = int(clip.fps * 8.0) 
+        win_cy = int(clip.fps * 4.0)
         win_ratio = int(clip.fps * 4.0)
 
-        smooth_cx = self.smooth_data(raw_cx, win_pos)
-        smooth_cy = self.smooth_data(raw_cy, win_pos)
+        smooth_cx = self.smooth_data(raw_cx, win_cx)
+        smooth_cy = self.smooth_data(raw_cy, win_cy)
         smooth_ratios = self.smooth_data(raw_ratios, win_ratio)
-        smooth_tops = self.smooth_data(raw_tops, win_pos)
-        smooth_bottoms = self.smooth_data(raw_bottoms, win_pos)
+        smooth_tops = self.smooth_data(raw_tops, win_cy)
+        smooth_bottoms = self.smooth_data(raw_bottoms, win_cy)
         
         # Stage 2: Calculate Instant Targets
         inst_target_h = []
@@ -223,23 +225,33 @@ class DirectorEngine:
         
         for i in range(len(smooth_cx)):
             curr_ratio = smooth_ratios[i]
-            safe_scale = self.calculate_natural_scale(curr_ratio, clip.duration)
+            safe_scale = self.calculate_cinema_scale(curr_ratio, clip.duration)
             
             t_h = src_h / safe_scale
             t_h = max(t_h, 480) 
             
-            # Vertical Fit (V30 Logic)
+            # Vertical Fit
             curr_top = smooth_tops[i]
             curr_bottom = smooth_bottoms[i]
             full_height = curr_bottom - curr_top
             essential_bottom = curr_top + (full_height * 0.75)
             essential_span = essential_bottom - curr_top
             
-            required_min_h = essential_span * 1.2
+            required_min_h = essential_span * 1.1
             if t_h < required_min_h: t_h = required_min_h
+            
+            # Force Minimum Drive
+            max_allowed_h = src_h / 1.15
+            if t_h > max_allowed_h: t_h = max_allowed_h
+            
             t_h = min(t_h, src_h)
             
+            # X-Axis Logic: Edge Anti-Jitter Lock
+            # 如果目标X距离中心很近 (<5%)，强制归中，防止微小抖动
             t_cx = smooth_cx[i]
+            if abs(t_cx - src_w/2) < (src_w * 0.05):
+                t_cx = src_w/2
+            
             bias_y = t_h * -0.05 
             t_cy = smooth_cy[i] + bias_y
             
@@ -268,16 +280,19 @@ class DirectorEngine:
             inst_target_cy.append(t_cy)
             inst_target_cx.append(t_cx)
             
-        # Stage 3: Smooth Targets (Target-Smoothing)
-        target_win = int(clip.fps * 4.0) 
-        smooth_target_h = self.smooth_data(inst_target_h, target_win, 2)
-        smooth_target_cy = self.smooth_data(inst_target_cy, target_win, 2)
-        smooth_target_cx = self.smooth_data(inst_target_cx, target_win, 2)
+        # Stage 3: Smooth Targets
+        # [V36] 对目标X轴进行极重型平滑 (8.0s)，制造"迟滞/漂移"感
+        target_win_x = int(clip.fps * 8.0) 
+        target_win_y = int(clip.fps * 4.0)
+        
+        smooth_target_h = self.smooth_data(inst_target_h, target_win_y, 2)
+        smooth_target_cy = self.smooth_data(inst_target_cy, target_win_y, 2)
+        smooth_target_cx = self.smooth_data(inst_target_cx, target_win_x, 2)
         
         crop_rects = []
         final_targets = []
         
-        # Stage 4: Generate Path
+        # Stage 4: Generate Path (Decoupled Interpolation)
         for i in range(len(smooth_cx)):
             t_h = smooth_target_h[i]
             t_cy = smooth_target_cy[i]
@@ -287,18 +302,25 @@ class DirectorEngine:
             final_targets.append((t_cx, t_cy, t_w, t_h))
             
             linear_prog = i / len(smooth_cx)
-            eased_prog = self.ease_quintic_in_out(linear_prog)
+            
+            # [V36] 解耦插值：Zoom 用 Quintic (动感)，Pan 用 Sine (柔和)
+            zoom_prog = self.ease_quintic_in_out(linear_prog)
+            pan_prog = self.ease_sine_in_out(linear_prog)
             
             if mode == "LOCKED-ON":
                 accel_prog = min(1.0, linear_prog * 6.0) 
-                eased_prog = self.ease_quintic_in_out(accel_prog)
+                zoom_prog = self.ease_quintic_in_out(accel_prog)
+                pan_prog = zoom_prog # Locked mode needs sync
 
             start_h = src_h; start_cx = src_w/2; start_cy = src_h/2
             
-            final_h = start_h + (t_h - start_h) * eased_prog
-            final_cx = start_cx + (t_cx - start_cx) * eased_prog
-            final_cy = start_cy + (t_cy - start_cy) * eased_prog
+            # Y & Zoom -> Quintic
+            final_h = start_h + (t_h - start_h) * zoom_prog
+            final_cy = start_cy + (t_cy - start_cy) * zoom_prog
             final_w = final_h * output_aspect
+            
+            # X -> Sine (Slow Pan)
+            final_cx = start_cx + (t_cx - start_cx) * pan_prog
             
             cx1 = final_cx - final_w / 2
             cy1 = final_cy - final_h / 2
@@ -313,7 +335,7 @@ class DirectorEngine:
         crop_rects = np.array(crop_rects)
         
         # Stage 5: Final Steadicam Polish
-        final_win = int(clip.fps * 2.0)
+        final_win = int(clip.fps * 3.0)
         final_x = self.smooth_data(crop_rects[:,0], final_win, 2)
         final_y = self.smooth_data(crop_rects[:,1], final_win, 2)
         final_w = self.smooth_data(crop_rects[:,2], final_win, 2)
@@ -342,8 +364,6 @@ class DirectorEngine:
         mode = data["mode"]
         
         src_w, src_h = clip.w, clip.h
-        
-        # [V33.2 Fix] Variable scoping
         rec_slowmo = data["rec_slowmo"]
         
         def frame_process(get_frame, t):
@@ -359,13 +379,9 @@ class DirectorEngine:
             ix1, iy1 = int(cx[idx]), int(cy[idx])
             ix2, iy2 = int(cx[idx]+cw[idx]), int(cy[idx]+ch[idx])
             
-            # [V33.1 Fix] 修复解包错误
-            rx1 = max(0, ix1)
-            ry1 = max(0, iy1)
-            rx2 = min(src_w, ix2)
-            ry2 = min(src_h, iy2)
-            if rx2 <= rx1 or ry2 <= ry1: 
-                rx1, ry1, rx2, ry2 = 0, 0, src_w, src_h
+            rx1 = max(0, ix1); ry1 = max(0, iy1)
+            rx2 = min(src_w, ix2); ry2 = min(src_h, iy2)
+            if rx2 <= rx1 or ry2 <= ry1: rx1,ry1,rx2,ry2 = 0,0,src_w,src_h
             
             crop_img = raw_frame[ry1:ry2, rx1:rx2]
             try:
@@ -378,7 +394,6 @@ class DirectorEngine:
             mon_img = cv2.resize(monitor_bg, (mon_w, self.target_h))
             def to_mon(x, y): return int(x * scale), int(y * scale)
             
-            # Guides
             cv2.line(mon_img, (mon_w//3, 0), (mon_w//3, self.target_h), (100,100,100), 1)
             cv2.line(mon_img, (2*mon_w//3, 0), (2*mon_w//3, self.target_h), (100,100,100), 1)
             cv2.line(mon_img, (0, self.target_h//3), (mon_w, self.target_h//3), (100,100,100), 1)
@@ -390,11 +405,9 @@ class DirectorEngine:
             feet_y = smooth_bottoms[idx]; _, m_feet_y = to_mon(0, feet_y)
             cv2.line(mon_img, (0, m_feet_y), (mon_w, m_feet_y), (255, 0, 0), 1)
             
-            draw_dashed_rect(mon_img, 0, 0, mon_w, self.target_h, (100,100,100), 1)
-            
             tcx, tcy, tcw, tch = targets[idx]
-            tx1, ty1 = int(tcx - tcw/2), int(tcy - tch/2)
-            tx2, ty2 = int(tcx + tcw/2), int(tcy + tch/2)
+            tx1 = int(tcx - tcw/2); ty1 = int(tcy - tch/2)
+            tx2 = int(tcx + tcw/2); ty2 = int(tcy + tch/2)
             mtx1, mty1 = to_mon(tx1, ty1); mtx2, mty2 = to_mon(tx2, ty2)
             draw_dashed_rect(mon_img, mtx1, mty1, mtx2, mty2, (0, 255, 255), 1)
             
@@ -438,14 +451,18 @@ if __name__ == "__main__":
     engine = DirectorEngine()
     
     VIDEO_PLAYLIST = [
-        r"C:\Users\Administrator\Desktop\vlog-clean\data\7.mp4",
-        r"C:\Users\Administrator\Desktop\vlog-clean\data\VID_20230422_132837.mp4",
-        r"C:\Users\Administrator\Desktop\vlog-clean\data\VID_20230422_133310.mp4",
-        r"C:\Users\Administrator\Desktop\vlog-clean\data\VID_20230422_133422.mp4"
+        r"C:\Users\Administrator\Desktop\vlog-clean\data\1.mp4",
+        r"C:\Users\Administrator\Desktop\vlog-clean\data\2.mp4",
+        r"C:\Users\Administrator\Desktop\vlog-clean\data\3.mp4",
+        r"C:\Users\Administrator\Desktop\vlog-clean\data\4.mp4",
+        r"C:\Users\Administrator\Desktop\vlog-clean\data\5.mp4",
+        r"C:\Users\Administrator\Desktop\vlog-clean\data\6.mp4",
+        r"C:\Users\Administrator\Desktop\vlog-clean\data\7.mp4"
+
     ]
     
     print("\n" + "="*60)
-    print("【AI 导演监视器 V33.2 - Bugfix Stable】")
+    print("【AI 导演监视器 V36.0 - Slow-Pan Cinema】")
     print(f"待处理视频数: {len(VIDEO_PLAYLIST)}")
     print("="*60 + "\n")
     
@@ -464,11 +481,11 @@ if __name__ == "__main__":
             data = engine.analyze_content(clip := VideoFileClip(video_path))
             hud_clip = engine.render_hud_monitor(clip, data)
             
-            out_dir = "hud_v33_2_output"
+            out_dir = "hud_v36_output"
             if not os.path.exists(out_dir): os.makedirs(out_dir)
             
             fname = os.path.splitext(os.path.basename(video_path))[0]
-            out_name = os.path.join(out_dir, f"HUD_V33_{fname}_Stable.mp4")
+            out_name = os.path.join(out_dir, f"HUD_V36_{fname}_SlowPan.mp4")
             
             print(f"    正在渲染至: {out_name} ...")
             hud_clip.write_videofile(out_name, codec='libx264', audio_codec='aac', fps=24, threads=4, logger='bar')
