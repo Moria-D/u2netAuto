@@ -1,0 +1,36 @@
+{
+    "video_file": "C:\\Users\\Administrator\\Desktop\\vlog-clean\\data\\7.mp4",
+    "process_date": "2026-01-16 17:36:17",
+    "events": [
+        {
+            "type": "STRATEGY_SELECT",
+            "timestamp_start": 0.0,
+            "timestamp_end": 8.0,
+            "duration": 8.0,
+            "parameters": {
+                "mode": "TRACKING_V32",
+                "note": "High motion detected"
+            }
+        },
+        {
+            "type": "STRATEGY_SELECT",
+            "timestamp_start": 0.0,
+            "timestamp_end": 6.54,
+            "duration": 6.54,
+            "parameters": {
+                "mode": "ZOOM_PAN_V56",
+                "is_landscape": false
+            }
+        },
+        {
+            "type": "ZOOM_PHASE",
+            "timestamp_start": 0.0,
+            "timestamp_end": 2.5,
+            "duration": 2.5,
+            "parameters": {
+                "max_scale": 1.15,
+                "curve": "ease_out_cubic"
+            }
+        }
+    ]
+}

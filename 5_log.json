@@ -1,0 +1,16 @@
+{
+    "video_file": "C:\\Users\\Administrator\\Desktop\\vlog-clean\\data\\5.mp4",
+    "process_date": "2026-01-16 17:36:17",
+    "events": [
+        {
+            "type": "STRATEGY_SELECT",
+            "timestamp_start": 0.0,
+            "timestamp_end": 8.0,
+            "duration": 8.0,
+            "parameters": {
+                "mode": "TRACKING_V32",
+                "note": "High motion detected"
+            }
+        }
+    ]
+}

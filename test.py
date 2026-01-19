@@ -8,7 +8,7 @@ from moviepy.editor import VideoFileClip
 from scipy.signal import savgol_filter
 
 # ==========================================
-# UI 绘图工具库
+# UI 绘图工具库 (完整保留)
 # ==========================================
 
 def draw_hud_label(img, text, x, y, bg_color=(0, 0, 0), text_color=(255, 255, 255), font_scale=0.6):
@@ -84,12 +84,12 @@ class U2NetSaliency:
         return mask
 
 # ==========================================
-# 核心算法引擎 V52.0 (Hyper-Speed Demo)
+# 核心算法引擎 V55.0 (Instant Start)
 # ==========================================
 
 class DirectorEngine:
     def __init__(self, target_res=(1920, 1080)):
-        print(f"[System] 初始化导演引擎 V52.0 (Hyper-Speed)...")
+        print(f"[System] 初始化导演引擎 V55.0 (Instant Start + Waist Lock)...")
         self.target_w, self.target_h = target_res
         try:
             self.saliency_detector = U2NetSaliency('u2netp.onnx')
@@ -138,35 +138,15 @@ class DirectorEngine:
                 
         return (final_cx, final_cy), saliency_ratio, saliency_map, rect, sal_top, sal_bottom
 
-    def calculate_morphology_scale(self, ratio, duration, is_face_closeup, is_tall_body, is_landscape=False):
-        if is_face_closeup:
-            return 1.0
-            
-        target_scale = 0.55 / (ratio + 0.25)
-        
-        # [V52] Hyper-Speed Limits (极速变焦)
-        # Landscape: 允许每秒 0.8x (极快)
-        # Normal: 允许每秒 0.5x
-        if is_landscape:
-            speed_limit = 0.80 
-        else:
-            speed_limit = 0.50 
-            
-        duration_limit = 1.0 + (duration * speed_limit) 
-        hard_limit = 1.7
-        if is_tall_body: hard_limit = 2.0 
-        
-        final_limit = min(duration_limit, hard_limit)
-        target_scale = max(1.15, min(target_scale, final_limit))
-        return target_scale
+    # [V55] 修改后的曲线：Ease Out Cubic
+    # 相比于 In-Out，这个函数在 t=0 时斜率最大，意味着一开始就全速变焦
+    # 随着时间推移缓慢减速，没有任何起步等待。
+    def ease_out_cubic(self, t):
+        return 1 - pow(1 - t, 3)
 
     def ease_cubic_in_out(self, t):
         if t < 0.5: return 4 * t * t * t
         else: return 1 - pow(-2 * t + 2, 3) / 2
-
-    def ease_quintic_in_out(self, t):
-        if t < 0.5: return 16 * t * t * t * t * t
-        else: return 1 - pow(-2 * t + 2, 5) / 2
 
     def ease_sine_in_out(self, t):
         return -(np.cos(np.pi * t) - 1) / 2
@@ -177,7 +157,7 @@ class DirectorEngine:
         return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
     def analyze_content(self, clip):
-        print(f"   [Phase 1] 扫描全片 (V52 Hyper-Speed)...")
+        print(f"   [Phase 1] 扫描全片 (V55 Instant Start)...")
         src_w, src_h = clip.w, clip.h
         
         raw_cx, raw_cy, raw_ratios, raw_rects = [], [], [], []
@@ -212,33 +192,21 @@ class DirectorEngine:
         raw_tops_arr = np.array(raw_tops)
         d_top = np.diff(raw_tops_arr, prepend=raw_tops_arr[0])
         smooth_d_top = self.smooth_data(d_top, int(clip.fps * 0.5), 1)
-        
         motion_score = np.mean(np.abs(d_top))
-        mode = "DOLLY"
-        if motion_score > 15.0: mode = "LOCKED-ON"
+        
+        # V55: Portrait Lock + No Delay
+        mode = "PORTRAIT-LOCK" 
         need_slowmo = motion_score > 8.0 and clip.duration > 4
 
-        # [V52] Smoothing - Aggressive Short Windows
-        # 为了在6秒视频中展示完整效果，必须极大缩短平滑窗口，减少起步滞后
-        win_short = int(clip.fps * 0.5) # 0.5秒响应
-        win_medium = int(clip.fps * 1.0) # 1.0秒稳定
+        # Smoothing
+        win_short = int(clip.fps * 0.5) 
+        win_medium = int(clip.fps * 1.0) 
 
         smooth_cx = self.smooth_data(raw_cx, win_short)
         smooth_cy_ref = self.smooth_data(raw_cy, win_medium) 
         smooth_ratios = self.smooth_data(raw_ratios, win_medium)
         smooth_tops_ref = self.smooth_data(raw_tops, win_medium) 
         smooth_bottoms = self.smooth_data(raw_bottoms, win_medium)
-        
-        # Lift Intensity
-        lift_intensity_list = []
-        for v in smooth_d_top:
-            if v > -1.0: val = 0.0
-            elif v < -4.0: val = 1.0
-            else: val = (abs(v) - 1.0) / 3.0
-            lift_intensity_list.append(val)
-        
-        # 动作强度的平滑也缩短，反应更灵敏
-        smooth_lift_intensity = self.smooth_data(lift_intensity_list, int(clip.fps * 1.0), 1)
         
         inst_target_h = []
         inst_target_cy = []
@@ -251,170 +219,80 @@ class DirectorEngine:
         
         for i in range(total_frames):
             curr_ratio = smooth_ratios[i]
+            curr_top = smooth_tops_ref[i]
+            curr_bottom = smooth_bottoms[i]
             
-            # [V52] Landscape Mode
-            if curr_ratio < 0.10: 
-                t_cy_base = smooth_cy_ref[i]
-                safe_scale = self.calculate_morphology_scale(curr_ratio, clip.duration, False, False, is_landscape=True)
-                t_h = src_h / safe_scale
-                t_h = min(t_h, src_h)
+            # [Landscape Logic] - 保留
+            if curr_ratio < 0.03: 
+                t_h = src_h 
+                t_cy = src_h / 2
+                t_cx = smooth_cx[i]
                 
-                t_cy = t_cy_base + (t_h * -0.05)
-                
-                safe_head_room = smooth_tops_ref[i] - (t_h * 0.10)
-                if (t_cy - t_h/2) > safe_head_room:
-                    t_cy = safe_head_room + t_h/2
-                if (t_cy - t_h/2) < 0: t_cy = t_h/2
-                if (t_cy + t_h/2) > src_h: t_cy = src_h - t_h/2
-                
-                # Horizontal Logic
                 center_x = src_w / 2
                 subject_x = smooth_cx[i]
-                progress = i / total_frames
-                
-                is_panning = False
-                
-                # [V52] 时序压缩：即使是 6秒视频，也当做需要快速展示的 Case
-                # 2.0秒以内都算 Short Clip (一步到位)
-                # 2.0秒以上都走 Sequence
-                
-                if clip.duration < 2.0:
-                    pan_t = self.ease_cubic_in_out(progress)
-                    is_panning = True
-                else:
-                    # 长视频 Sequenced Pan
-                    # 加快节奏：Zoom 开始时 Pan 保持静止，Zoom 进行一会儿后 Pan 快速跟上
-                    pan_start = 0.10
-                    pan_end = 0.90
-                    
-                    if progress > pan_end:
-                        pan_t = 1.0 # Lock on subject
-                    else:
-                        pan_t = self.map_range(progress, pan_start, pan_end, 0.0, 1.0)
-                        pan_t = self.ease_sine_in_out(pan_t)
-                        if pan_t > 0.01: is_panning = True
-                
+                pan_t = self.ease_cubic_in_out(i / total_frames)
                 t_cx = center_x * (1 - pan_t) + subject_x * pan_t
                 
-                current_view_w = t_h * output_aspect
-                view_left = t_cx - current_view_w/2
-                view_right = t_cx + current_view_w/2
-                subj_w_est = (smooth_bottoms[i] - smooth_tops_ref[i]) / 2
-                subj_left = subject_x - subj_w_est/2
-                subj_right = subject_x + subj_w_est/2
-                
-                if subj_left < view_left: t_cx -= (view_left - subj_left)
-                elif subj_right > view_right: t_cx += (subj_right - view_right)
-                
-                if (t_cx - current_view_w/2) < 0: t_cx = current_view_w/2
-                if (t_cx + current_view_w/2) > src_w: t_cx = src_w - current_view_w/2
+                t_w = t_h * output_aspect
+                if t_cx - t_w/2 < 0: t_cx = t_w/2
+                if t_cx + t_w/2 > src_w: t_cx = src_w - t_w/2
                 
                 inst_target_h.append(t_h)
                 inst_target_cy.append(t_cy)
                 inst_target_cx.append(t_cx)
-                active_tops_trace.append(smooth_tops_ref[i]) 
+                active_tops_trace.append(curr_top)
+                action_trace.append("LANDSCAPE_PAN")
+                continue
                 
-                if is_panning: action_trace.append("LANDSCAPE_PAN")
-                else: action_trace.append("LANDSCAPE_ZOOM")
-                continue 
-            
-            # [Standard Mode]
-            intensity = smooth_lift_intensity[i]
-            curr_top = raw_tops[i] * intensity + smooth_tops_ref[i] * (1 - intensity)
-            curr_cy = raw_cy[i] * intensity + smooth_cy_ref[i] * (1 - intensity)
-            active_tops_trace.append(curr_top)
-
-            curr_bottom = smooth_bottoms[i]
-            subject_h = curr_bottom - curr_top
-            
+            # [Portrait Lock Logic] - 上半身锁定逻辑 (V54核心)
+            full_body_h = curr_bottom - curr_top
             raw_w = raw_rects[i][2]
             if raw_w < 1: raw_w = 1
-            subject_aspect = subject_h / raw_w 
-            height_ratio = subject_h / src_h
+            aspect = full_body_h / raw_w
             
-            is_face_closeup = (height_ratio > 0.5) and (subject_aspect < 1.6)
-            is_tall_body = (height_ratio > 0.6) and (subject_aspect >= 1.6)
+            is_standing = aspect > 1.8
             
-            if intensity > 0.3: is_face_closeup = False
-            
-            safe_scale = self.calculate_morphology_scale(curr_ratio, clip.duration, is_face_closeup, is_tall_body, is_landscape=False)
-            
-            t_h = src_h / safe_scale
-            t_h = max(t_h, 480) 
-            
-            if is_face_closeup: max_allowed_h = src_h 
-            else: max_allowed_h = src_h / 1.15
-            
-            if t_h > max_allowed_h: t_h = max_allowed_h
+            if is_standing:
+                virtual_bottom = curr_top + (full_body_h * 0.45)
+                upper_body_h = virtual_bottom - curr_top
+                t_h = upper_body_h / 0.75
+            else:
+                upper_body_h = full_body_h
+                t_h = upper_body_h / 0.85 
+
+            # 变焦上限 (4.5x)
+            min_allowed_h = src_h / 4.5 
+            t_h = max(t_h, min_allowed_h)
             t_h = min(t_h, src_h)
             
-            t_cx = smooth_cx[i]
-            if abs(t_cx - src_w/2) < (src_w * 0.05): t_cx = src_w/2
+            # 头顶锚点计算
+            zoom_factor = src_h / t_h
+            if zoom_factor > 2.5: headroom_ratio = 0.12 
+            else: headroom_ratio = 0.18 
             
-            if is_face_closeup:
-                dynamic_headroom = 0.05
-                drift_bias = 0.0
-            elif intensity > 0.1:
-                dynamic_headroom = 0.20 + (0.2 * intensity) 
-                drift_bias = -0.05 + (-0.25 * intensity) 
-            else:
-                drift_bias = -0.05
-                dynamic_headroom = 0.12
-            
-            bias_y = t_h * drift_bias
-            t_cy = curr_cy + bias_y
-            
-            head_buffer = t_h * dynamic_headroom
-            safe_head_top = curr_top - head_buffer
-            
-            chin_y = curr_bottom - (subject_h * 0.05)
-            chin_buffer = t_h * 0.12 if is_face_closeup else t_h * 0.05
-            safe_chin_bottom = chin_y + chin_buffer
-            
-            proposed_top = t_cy - t_h / 2
-            proposed_bottom = t_cy + t_h / 2
-            
-            if is_face_closeup:
-                if proposed_bottom < safe_chin_bottom:
-                    push_down = safe_chin_bottom - proposed_bottom
-                    t_cy += push_down
-                elif proposed_top > safe_head_top:
-                    max_push_up = proposed_bottom - safe_chin_bottom
-                    if max_push_up > 0:
-                        needed_push_up = proposed_top - safe_head_top
-                        t_cy -= min(max_push_up, needed_push_up)
-            else:
-                if proposed_top > safe_head_top:
-                    t_cy = safe_head_top + t_h / 2
-                
-                if (t_cy + t_h/2) < safe_chin_bottom:
-                    push_down = safe_chin_bottom - (t_cy + t_h/2)
-                    new_top = (t_cy + push_down) - t_h/2
-                    if new_top < curr_top:
-                        t_cy += push_down
+            target_top_edge = curr_top - (t_h * headroom_ratio)
+            t_cy = target_top_edge + (t_h / 2)
             
             if (t_cy - t_h/2) < 0: t_cy = t_h/2
             if (t_cy + t_h/2) > src_h: t_cy = src_h - t_h/2
             
-            current_bottom = t_cy + t_h / 2
-            if current_bottom < safe_chin_bottom:
-                diff = safe_chin_bottom - current_bottom
-                t_h += diff * 2.0
-                t_h = min(t_h, src_h)
-                if (t_cy + t_h/2) > src_h: t_cy = src_h - t_h/2
+            t_cx = smooth_cx[i]
+            view_w = t_h * output_aspect
+            if (t_cx - view_w/2) < 0: t_cx = view_w/2
+            if (t_cx + view_w/2) > src_w: t_cx = src_w - view_w/2
             
             inst_target_h.append(t_h)
             inst_target_cy.append(t_cy)
             inst_target_cx.append(t_cx)
-            action_trace.append("STANDARD")
-            
-        # Target Smoothing (Short Window for Speed)
-        target_win_y = int(clip.fps * 1.0) 
-        target_win_x = int(clip.fps * 1.0) 
+            active_tops_trace.append(curr_top)
+            action_trace.append("WAIST_LOCK")
+
+        # 稳定窗口
+        win_smooth = int(clip.fps * 2.5) 
         
-        smooth_target_h = self.smooth_data(inst_target_h, target_win_y, 2)
-        smooth_target_cy = self.smooth_data(inst_target_cy, target_win_y, 2)
-        smooth_target_cx = self.smooth_data(inst_target_cx, target_win_x, 2)
+        smooth_target_h = self.smooth_data(inst_target_h, win_smooth, 2)
+        smooth_target_cy = self.smooth_data(inst_target_cy, win_smooth, 2)
+        smooth_target_cx = self.smooth_data(inst_target_cx, win_smooth, 2)
         
         crop_rects = []
         final_targets = []
@@ -427,40 +305,38 @@ class DirectorEngine:
             
             final_targets.append((t_cx, t_cy, t_w, t_h))
             
+            # [V55 Critical Change] 变焦进度曲线优化
             linear_prog = i / len(smooth_cx)
-            # [V52] Cubic Curve for Faster Zoom Start
-            zoom_prog = self.ease_cubic_in_out(linear_prog)
+            
+            # 使用 Ease Out Cubic 替代 Cubic In-Out
+            # 效果：起始速度极快，无任何等待，结尾平滑减速
+            zoom_prog = self.ease_out_cubic(linear_prog)
             
             start_h = src_h
             final_h = start_h + (t_h - start_h) * zoom_prog
-            final_cx = t_cx 
-            final_cy = t_cy
             
-            final_w = final_h * output_aspect
+            start_cx = src_w / 2
+            start_cy = src_h / 2
             
-            cx1 = final_cx - final_w / 2
-            cy1 = final_cy - final_h / 2
+            curr_frame_cx = start_cx + (t_cx - start_cx) * zoom_prog
+            curr_frame_cy = start_cy + (t_cy - start_cy) * zoom_prog
+            
+            curr_frame_w = final_h * output_aspect
+            
+            cx1 = curr_frame_cx - curr_frame_w / 2
+            cy1 = curr_frame_cy - final_h / 2
             
             if cx1 < 0: cx1 = 0
             if cy1 < 0: cy1 = 0
-            if cx1 + final_w > src_w: cx1 = src_w - final_w
+            if cx1 + curr_frame_w > src_w: cx1 = src_w - curr_frame_w
             if cy1 + final_h > src_h: cy1 = src_h - final_h
             
-            crop_rects.append([cx1, cy1, final_w, final_h])
+            crop_rects.append([cx1, cy1, curr_frame_w, final_h])
             
         crop_rects = np.array(crop_rects)
         
-        # Final Polish (Minimal Inertia)
-        final_win_y = int(clip.fps * 0.5) 
-        final_win_x = int(clip.fps * 0.5)
-        
-        final_x = self.smooth_data(crop_rects[:,0], final_win_x, 2)
-        final_y = self.smooth_data(crop_rects[:,1], final_win_y, 2)
-        final_w = self.smooth_data(crop_rects[:,2], final_win_y, 2) 
-        final_h = self.smooth_data(crop_rects[:,3], final_win_y, 2)
-        
         return {
-            "crop_box": (final_x, final_y, final_w, final_h),
+            "crop_box": (crop_rects[:,0], crop_rects[:,1], crop_rects[:,2], crop_rects[:,3]),
             "target_box": final_targets,
             "motion_score": motion_score,
             "raw_rects": raw_rects,
@@ -484,7 +360,6 @@ class DirectorEngine:
         action_trace = data["action_trace"] 
         
         src_w, src_h = clip.w, clip.h
-        rec_slowmo = data["rec_slowmo"]
         
         def frame_process(get_frame, t):
             raw_frame = get_frame(t)
@@ -523,9 +398,6 @@ class DirectorEngine:
                 head_y = smooth_tops[idx]; _, m_head_y = to_mon(0, head_y)
                 cv2.line(mon_img, (0, m_head_y), (mon_w, m_head_y), (255, 0, 255), 1)
             
-            feet_y = smooth_bottoms[idx]; _, m_feet_y = to_mon(0, feet_y)
-            cv2.line(mon_img, (0, m_feet_y), (mon_w, m_feet_y), (255, 0, 0), 1)
-            
             tcx, tcy, tcw, tch = targets[idx]
             tx1 = int(tcx - tcw / 2)
             ty1 = int(tcy - tch / 2)
@@ -539,17 +411,7 @@ class DirectorEngine:
             
             curr_center = ((mx1+mx2)//2, (my1+my2)//2)
             target_center = ((mtx1+mtx2)//2, (mty1+mty2)//2)
-            
-            # [V51] 高亮战术箭头 (Red & Thick)
-            current_action = action_trace[idx]
-            if current_action == "LANDSCAPE_PAN":
-                arrow_color = (0, 0, 255) # Red (BGR)
-                thickness = 3 # Bold
-            else:
-                arrow_color = (0, 255, 255) # Cyan
-                thickness = 2
-                
-            draw_vector_arrow(mon_img, curr_center, target_center, arrow_color, thickness, tip_size=0.4)
+            draw_vector_arrow(mon_img, curr_center, target_center, (0, 255, 255), 2, tip_size=0.4)
             
             sx, sy, sw, sh = raw_rects[idx]
             bx1, by1 = to_mon(sx, sy); bx2, by2 = to_mon(sx+sw, sy+sh)
@@ -558,13 +420,13 @@ class DirectorEngine:
             ui_x, ui_y = 20, self.target_h - 60
             curr_zoom = src_h / ch[idx]
             draw_hud_label(mon_img, f"ZOOM: {curr_zoom:.2f}x", ui_x, ui_y, bg_color=(0,100,0))
-            draw_hud_label(mon_img, f"CAM: {mode}", ui_x + 130, ui_y, bg_color=(100, 0, 100))
+            draw_hud_label(mon_img, f"MODE: {mode}", ui_x + 130, ui_y, bg_color=(100, 0, 100))
             
-            status_text = "Action: " + current_action
+            status_text = "Act: " + action_trace[idx]
             draw_hud_label(mon_img, status_text, ui_x + 260, ui_y, bg_color=(0, 0, 100))
             
             draw_progress_bar(mon_img, ui_x, ui_y + 20, 150, 10, ratios[idx], 0.6, (0, 200, 255), "ATTENTION")
-            draw_progress_bar(mon_img, ui_x + 170, ui_y + 20, 150, 10, curr_zoom, 2.4, (0, 255, 0), "KB PATH")
+            draw_progress_bar(mon_img, ui_x + 170, ui_y + 20, 150, 10, curr_zoom, 4.5, (0, 255, 0), "PATH")
 
             combined = np.zeros((self.target_h, self.target_w * 2, 3), dtype=np.uint8)
             off_x = (self.target_w - mon_w) // 2
@@ -582,12 +444,13 @@ class DirectorEngine:
 if __name__ == "__main__":
     engine = DirectorEngine()
     
+    # 请在此处替换为你的视频路径
     VIDEO_PLAYLIST = [
-        r"C:\Users\Administrator\Desktop\vlog-clean\data\test-1-before.mp4"
+        r"C:\Users\Administrator\Desktop\vlog-clean\data\test-1-before.mp4" 
     ]
     
     print("\n" + "="*60)
-    print("【AI 导演监视器 V52.0 - Hyper-Speed Demo】")
+    print("【AI 导演监视器 V55.0 - Instant Start】")
     print(f"待处理视频数: {len(VIDEO_PLAYLIST)}")
     print("="*60 + "\n")
     
@@ -606,11 +469,11 @@ if __name__ == "__main__":
             data = engine.analyze_content(clip := VideoFileClip(video_path))
             hud_clip = engine.render_hud_monitor(clip, data)
             
-            out_dir = "hud_v52_output"
+            out_dir = "hud_v55_output"
             if not os.path.exists(out_dir): os.makedirs(out_dir)
             
             fname = os.path.splitext(os.path.basename(video_path))[0]
-            out_name = os.path.join(out_dir, f"HUD_V52_{fname}_Hyper.mp4")
+            out_name = os.path.join(out_dir, f"HUD_V55_{fname}_Instant.mp4")
             
             print(f"    正在渲染至: {out_name} ...")
             hud_clip.write_videofile(out_name, codec='libx264', audio_codec='aac', fps=24, threads=4, logger='bar')
