@@ -1,0 +1,329 @@
+{
+    "batch_id": "20260120_175259",
+    "processed_videos": [
+        {
+            "file": "red2.mp4",
+            "mode": "LOCKED_ON",
+            "events": [
+                {
+                    "frame": 0,
+                    "time": 0.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 30,
+                    "time": 1.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 60,
+                    "time": 2.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 90,
+                    "time": 3.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 120,
+                    "time": 4.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 150,
+                    "time": 5.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 180,
+                    "time": 6.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 210,
+                    "time": 7.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 240,
+                    "time": 8.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 270,
+                    "time": 9.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                }
+            ]
+        },
+        {
+            "file": "wave2.mp4",
+            "mode": "LOCKED_ON",
+            "events": [
+                {
+                    "frame": 0,
+                    "time": 0.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 30,
+                    "time": 1.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 60,
+                    "time": 2.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 90,
+                    "time": 3.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 120,
+                    "time": 4.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 150,
+                    "time": 5.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 180,
+                    "time": 6.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 210,
+                    "time": 7.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                }
+            ]
+        },
+        {
+            "file": "wave3.mp4",
+            "mode": "LOCKED_ON",
+            "events": [
+                {
+                    "frame": 0,
+                    "time": 0.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 30,
+                    "time": 1.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 60,
+                    "time": 2.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                },
+                {
+                    "frame": 90,
+                    "time": 3.0,
+                    "params": {
+                        "act": "LOCKED"
+                    }
+                }
+            ]
+        },
+        {
+            "file": "park.mp4",
+            "mode": "PAN",
+            "events": [
+                {
+                    "frame": 0,
+                    "time": 0.0,
+                    "params": {
+                        "act": "PANNING"
+                    }
+                },
+                {
+                    "frame": 30,
+                    "time": 1.0,
+                    "params": {
+                        "act": "PANNING"
+                    }
+                },
+                {
+                    "frame": 60,
+                    "time": 2.0,
+                    "params": {
+                        "act": "PANNING"
+                    }
+                },
+                {
+                    "frame": 90,
+                    "time": 3.0,
+                    "params": {
+                        "act": "PANNING"
+                    }
+                },
+                {
+                    "frame": 120,
+                    "time": 4.0,
+                    "params": {
+                        "act": "PANNING"
+                    }
+                },
+                {
+                    "frame": 150,
+                    "time": 5.0,
+                    "params": {
+                        "act": "PANNING"
+                    }
+                },
+                {
+                    "frame": 180,
+                    "time": 6.0,
+                    "params": {
+                        "act": "PANNING"
+                    }
+                },
+                {
+                    "frame": 210,
+                    "time": 7.0,
+                    "params": {
+                        "act": "PANNING"
+                    }
+                },
+                {
+                    "frame": 240,
+                    "time": 8.0,
+                    "params": {
+                        "act": "PANNING"
+                    }
+                },
+                {
+                    "frame": 270,
+                    "time": 9.0,
+                    "params": {
+                        "act": "PANNING"
+                    }
+                }
+            ]
+        },
+        {
+            "file": "park.mp4",
+            "mode": "ZOOM_IN",
+            "events": [
+                {
+                    "frame": 0,
+                    "time": 0.0,
+                    "params": {
+                        "act": "ZOOM-IN 0%"
+                    }
+                },
+                {
+                    "frame": 30,
+                    "time": 1.0,
+                    "params": {
+                        "act": "ZOOM-IN 7%"
+                    }
+                },
+                {
+                    "frame": 60,
+                    "time": 2.0,
+                    "params": {
+                        "act": "ZOOM-IN 14%"
+                    }
+                },
+                {
+                    "frame": 90,
+                    "time": 3.0,
+                    "params": {
+                        "act": "ZOOM-IN 22%"
+                    }
+                },
+                {
+                    "frame": 120,
+                    "time": 4.0,
+                    "params": {
+                        "act": "ZOOM-IN 29%"
+                    }
+                },
+                {
+                    "frame": 150,
+                    "time": 5.0,
+                    "params": {
+                        "act": "ZOOM-IN 36%"
+                    }
+                },
+                {
+                    "frame": 180,
+                    "time": 6.0,
+                    "params": {
+                        "act": "ZOOM-IN 43%"
+                    }
+                },
+                {
+                    "frame": 210,
+                    "time": 7.0,
+                    "params": {
+                        "act": "ZOOM-IN 51%"
+                    }
+                },
+                {
+                    "frame": 240,
+                    "time": 8.0,
+                    "params": {
+                        "act": "ZOOM-IN 58%"
+                    }
+                },
+                {
+                    "frame": 270,
+                    "time": 9.0,
+                    "params": {
+                        "act": "ZOOM-IN 65%"
+                    }
+                }
+            ]
+        }
+    ]
+}

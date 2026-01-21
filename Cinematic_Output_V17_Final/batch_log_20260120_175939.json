@@ -1,0 +1,107 @@
+{
+    "batch_id": "20260120_175939",
+    "processed_videos": [
+        {
+            "file": "park_cut.mp4",
+            "mode": "PAN",
+            "events": [
+                {
+                    "frame": 0,
+                    "time": 0.0,
+                    "params": {
+                        "act": "PANNING"
+                    }
+                },
+                {
+                    "frame": 30,
+                    "time": 1.0,
+                    "params": {
+                        "act": "PANNING"
+                    }
+                },
+                {
+                    "frame": 60,
+                    "time": 2.0,
+                    "params": {
+                        "act": "PANNING"
+                    }
+                },
+                {
+                    "frame": 90,
+                    "time": 3.0,
+                    "params": {
+                        "act": "PANNING"
+                    }
+                }
+            ]
+        },
+        {
+            "file": "park_cut.mp4",
+            "mode": "ZOOM_IN",
+            "events": [
+                {
+                    "frame": 0,
+                    "time": 0.0,
+                    "params": {
+                        "act": "ZOOM-IN 0%"
+                    }
+                },
+                {
+                    "frame": 30,
+                    "time": 1.0,
+                    "params": {
+                        "act": "ZOOM-IN 19%"
+                    }
+                },
+                {
+                    "frame": 60,
+                    "time": 2.0,
+                    "params": {
+                        "act": "ZOOM-IN 38%"
+                    }
+                },
+                {
+                    "frame": 90,
+                    "time": 3.0,
+                    "params": {
+                        "act": "ZOOM-IN 57%"
+                    }
+                }
+            ]
+        },
+        {
+            "file": "park_cut.mp4",
+            "mode": "ZOOM_OUT",
+            "events": [
+                {
+                    "frame": 0,
+                    "time": 0.0,
+                    "params": {
+                        "act": "ZOOM-OUT 0%"
+                    }
+                },
+                {
+                    "frame": 30,
+                    "time": 1.0,
+                    "params": {
+                        "act": "ZOOM-OUT 19%"
+                    }
+                },
+                {
+                    "frame": 60,
+                    "time": 2.0,
+                    "params": {
+                        "act": "ZOOM-OUT 38%"
+                    }
+                },
+                {
+                    "frame": 90,
+                    "time": 3.0,
+                    "params": {
+                        "act": "ZOOM-OUT 57%"
+                    }
+                }
+            ]
+        }
+    ]
+}

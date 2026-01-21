@@ -1,0 +1,35 @@
+{
+    "video_file": "Processing...",
+    "process_date": "2026-01-20 10:18:25",
+    "mode": "ZOOM_OUT",
+    "events": [
+        {
+            "frame": 0,
+            "time": 0.0,
+            "params": {
+                "act": "ZOOM-OUT 0%"
+            }
+        },
+        {
+            "frame": 25,
+            "time": 1.0,
+            "params": {
+                "act": "ZOOM-OUT 18%"
+            }
+        },
+        {
+            "frame": 50,
+            "time": 2.0,
+            "params": {
+                "act": "ZOOM-OUT 36%"
+            }
+        },
+        {
+            "frame": 75,
+            "time": 3.0,
+            "params": {
+                "act": "ZOOM-OUT 54%"
+            }
+        }
+    ]
+}

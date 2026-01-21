@@ -1,0 +1,46 @@
+{
+    "batch_id": "20260120_142145",
+    "processed_videos": [
+        {
+            "file": "wave5.mp4",
+            "mode": "LOCKED_ON",
+            "events": [
+                {
+                    "frame": 0,
+                    "time": 0.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 30,
+                    "time": 1.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 60,
+                    "time": 2.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 90,
+                    "time": 3.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 120,
+                    "time": 4.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                }
+            ]
+        }
+    ]
+}

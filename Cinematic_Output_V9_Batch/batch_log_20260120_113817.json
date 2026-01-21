@@ -1,0 +1,252 @@
+{
+    "batch_id": "20260120_113817",
+    "processed_videos": [
+        {
+            "file": "red2.mp4",
+            "mode": "LOCKED_ON",
+            "events": [
+                {
+                    "frame": 0,
+                    "time": 0.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 30,
+                    "time": 1.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 60,
+                    "time": 2.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 90,
+                    "time": 3.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 120,
+                    "time": 4.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 150,
+                    "time": 5.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 180,
+                    "time": 6.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 210,
+                    "time": 7.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 240,
+                    "time": 8.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 270,
+                    "time": 9.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                }
+            ]
+        },
+        {
+            "file": "wave1.mp4",
+            "mode": "LOCKED_ON",
+            "events": [
+                {
+                    "frame": 0,
+                    "time": 0.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 30,
+                    "time": 1.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 60,
+                    "time": 2.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 90,
+                    "time": 3.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                }
+            ]
+        },
+        {
+            "file": "wave2.mp4",
+            "mode": "LOCKED_ON",
+            "events": [
+                {
+                    "frame": 0,
+                    "time": 0.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 30,
+                    "time": 1.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 60,
+                    "time": 2.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 90,
+                    "time": 3.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 120,
+                    "time": 4.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 150,
+                    "time": 5.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 180,
+                    "time": 6.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 210,
+                    "time": 7.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                }
+            ]
+        },
+        {
+            "file": "wave3.mp4",
+            "mode": "LOCKED_ON",
+            "events": [
+                {
+                    "frame": 0,
+                    "time": 0.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 30,
+                    "time": 1.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 60,
+                    "time": 2.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 90,
+                    "time": 3.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                }
+            ]
+        },
+        {
+            "file": "red1.mp4",
+            "mode": "LOCKED_ON",
+            "events": [
+                {
+                    "frame": 0,
+                    "time": 0.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 30,
+                    "time": 1.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 60,
+                    "time": 2.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 90,
+                    "time": 3.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                },
+                {
+                    "frame": 120,
+                    "time": 4.0,
+                    "params": {
+                        "act": "LOCKED: ABSOLUTE"
+                    }
+                }
+            ]
+        }
+    ]
+}

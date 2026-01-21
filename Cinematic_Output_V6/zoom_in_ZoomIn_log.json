@@ -1,0 +1,35 @@
+{
+    "video_file": "Processing...",
+    "process_date": "2026-01-20 10:15:53",
+    "mode": "ZOOM_IN",
+    "events": [
+        {
+            "frame": 0,
+            "time": 0.0,
+            "params": {
+                "act": "ZOOM-IN 0%"
+            }
+        },
+        {
+            "frame": 30,
+            "time": 1.0,
+            "params": {
+                "act": "ZOOM-IN 20%"
+            }
+        },
+        {
+            "frame": 60,
+            "time": 2.0,
+            "params": {
+                "act": "ZOOM-IN 39%"
+            }
+        },
+        {
+            "frame": 90,
+            "time": 3.0,
+            "params": {
+                "act": "ZOOM-IN 59%"
+            }
+        }
+    ]
+}
